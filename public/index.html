@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>kintone 一覧</title>
+</head>
+<body>
+  <h1>kintone レコード一覧</h1>
+  <table border="1" id="records-table">
+    <thead>
+      <tr>
+        <th>レコード番号</th>
+        <th>作成者</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadRecords() {
+      const res = await fetch("/api/kintone");
+      const data = await res.json();
+
+      const tbody = document.querySelector("#records-table tbody");
+      tbody.innerHTML = "";
+
+      data.records.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.$id.value}</td>
+          <td>${r.作成者?.value?.name ?? ""}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadRecords();
+  </script>
+</body>
+</html>
