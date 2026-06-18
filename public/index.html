@@ -26,12 +26,14 @@
       tbody.innerHTML = "";
 
       data.records.forEach(r => {
+        const values = [r.$id.value, r.brand?.value ?? "", r.model?.value ?? ""];
+
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.$id.value}</td>
-          <td>${r.brand?.value ?? ""}</td>
-          <td>${r.model?.value ?? ""}</td>
-        `;
+        tr.append(...values.map(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          return td;
+        }));
         tbody.appendChild(tr);
       });
     }
