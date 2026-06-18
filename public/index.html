@@ -12,6 +12,7 @@
         <th>レコード番号</th>
         <th>メーカー</th>
         <th>車種</th>
+        <th>操作</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -26,15 +27,85 @@
       tbody.innerHTML = "";
 
       data.records.forEach(r => {
-        const values = [r.$id.value, r.brand?.value ?? "", r.model?.value ?? ""];
+        const record = {
+          id: r.$id.value,
+          brand: r.brand?.value ?? "",
+          model: r.model?.value ?? "",
+        };
+        tbody.appendChild(createRecordRow(record));
+      });
+    }
 
-        const tr = document.createElement("tr");
-        tr.append(...values.map(value => {
-          const td = document.createElement("td");
-          td.textContent = value;
-          return td;
-        }));
-        tbody.appendChild(tr);
+    function createRecordRow(record) {
+      const tr = document.createElement("tr");
+
+      const idCell = createTextCell(record.id);
+      const brandCell = createTextCell(record.brand);
+      const modelCell = createTextCell(record.model);
+      const actionCell = createActionCell(record, brandCell, modelCell);
+
+      tr.append(idCell, brandCell, modelCell, actionCell);
+      return tr;
+    }
+
+    function createTextCell(value) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      return td;
+    }
+
+    function createActionCell(record, brandCell, modelCell) {
+      const td = document.createElement("td");
+
+      const editButton = document.createElement("button");
+      editButton.textContent = "編集";
+
+      const saveButton = document.createElement("button");
+      saveButton.textContent = "保存";
+      saveButton.hidden = true;
+
+      editButton.addEventListener("click", () => {
+        setCellEditable(brandCell, record.brand);
+        setCellEditable(modelCell, record.model);
+        editButton.hidden = true;
+        saveButton.hidden = false;
+      });
+
+      saveButton.addEventListener("click", async () => {
+        const brand = brandCell.querySelector("input").value;
+        const model = modelCell.querySelector("input").value;
+
+        await saveRecord(record.id, { brand, model });
+
+        record.brand = brand;
+        record.model = model;
+        setCellText(brandCell, brand);
+        setCellText(modelCell, model);
+        editButton.hidden = false;
+        saveButton.hidden = true;
+      });
+
+      td.append(editButton, saveButton);
+      return td;
+    }
+
+    function setCellEditable(cell, value) {
+      cell.textContent = "";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = value;
+      cell.appendChild(input);
+    }
+
+    function setCellText(cell, value) {
+      cell.textContent = value;
+    }
+
+    async function saveRecord(id, fields) {
+      await fetch(`/api/kintone/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
       });
     }
 
