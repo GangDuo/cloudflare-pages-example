@@ -10,7 +10,8 @@
     <thead>
       <tr>
         <th>レコード番号</th>
-        <th>作成者</th>
+        <th>メーカー</th>
+        <th>車種</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -28,7 +29,8 @@
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${r.$id.value}</td>
-          <td>${r.作成者?.value?.name ?? ""}</td>
+          <td>${r.brand?.value ?? ""}</td>
+          <td>${r.model?.value ?? ""}</td>
         `;
         tbody.appendChild(tr);
       });
