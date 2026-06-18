@@ -1,121 +1,724 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>kintone 一覧</title>
-</head>
-<body>
-  <h1>kintone レコード一覧</h1>
-  <table border="1" id="records-table">
-    <thead>
-      <tr>
-        <th>レコード番号</th>
-        <th>メーカー</th>
-        <th>車種</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 
-  <script>
-    async function loadRecords() {
-      const res = await fetch("/api/kintone");
-      const data = await res.json();
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Italiana&display=swap" rel="stylesheet">
 
-      const tbody = document.querySelector("#records-table tbody");
-      tbody.innerHTML = "";
+  <style>
+    /* ==========================================================================
+       iOS Liquid Glass 風デザイントークン
+       ========================================================================== */
+    :root {
+      --glass-white: rgba(255, 255, 255, 0.12);
+      --glass-white-md: rgba(255, 255, 255, 0.2);
+      --glass-border: rgba(255, 255, 255, 0.25);
+      --glass-border-subtle: rgba(255, 255, 255, 0.12);
 
-      data.records.forEach(r => {
-        const record = {
-          id: r.$id.value,
-          brand: r.brand?.value ?? "",
-          model: r.model?.value ?? "",
-        };
-        tbody.appendChild(createRecordRow(record));
-      });
+      --blur-sm: blur(8px);
+      --blur-md: blur(18px);
+
+      --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+      --reflection-top: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
+      --reflection-inner: inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+
+      --accent-aqua: #5ee7df;
+      --accent-violet: #b490f5;
+
+      --color-bg: #0b0e1a;
+      --color-text: #ffffff;
+      --color-text-muted: rgba(255, 255, 255, 0.55);
+
+      --space-2xs: 4px;
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-3xl: 64px;
+
+      --text-2xs: 0.68rem;
+      --text-xs: 0.75rem;
+      --text-sm: 0.82rem;
+      --text-md: 0.9rem;
+      --text-lg: 1.125rem;
+
+      --radius-xs: 6px;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+
+      --z-toast: 800;
+
+      --ease-glass: cubic-bezier(0.22, 0.68, 0, 1.2);
+      --ease-liquid: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+      --dur-fast: 180ms;
+      --dur-mid: 360ms;
+      --dur-slow: 600ms;
+
+      --font-display: "Italiana", serif;
+      --font-body: "DM Sans", sans-serif;
     }
 
-    function createRecordRow(record) {
-      const tr = document.createElement("tr");
+    [data-theme="light"] {
+      --glass-white: rgba(255, 255, 255, 0.62);
+      --glass-white-md: rgba(255, 255, 255, 0.78);
+      --glass-border: rgba(15, 23, 42, 0.14);
+      --glass-border-subtle: rgba(15, 23, 42, 0.09);
 
-      const idCell = createTextCell(record.id);
-      const brandCell = createTextCell(record.brand);
-      const modelCell = createTextCell(record.model);
-      const actionCell = createActionCell(record, brandCell, modelCell);
+      --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-      tr.append(idCell, brandCell, modelCell, actionCell);
-      return tr;
+      --reflection-top: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 50%);
+      --reflection-inner: inset 0 1px 1px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(0, 0, 0, 0.04);
+
+      --accent-aqua: #0891b2;
+      --accent-violet: #6d28d9;
+
+      --color-bg: #e8f0fa;
+      --color-text: #0f172a;
+      --color-text-muted: rgba(15, 23, 42, 0.58);
     }
 
-    function createTextCell(value) {
-      const td = document.createElement("td");
-      td.textContent = value;
-      return td;
-    }
-
-    function createActionCell(record, brandCell, modelCell) {
-      const td = document.createElement("td");
-
-      const editButton = document.createElement("button");
-      editButton.textContent = "編集";
-
-      const saveButton = document.createElement("button");
-      saveButton.textContent = "保存";
-      saveButton.hidden = true;
-
-      editButton.addEventListener("click", () => {
-        setCellEditable(brandCell, record.brand);
-        setCellEditable(modelCell, record.model);
-        editButton.hidden = true;
-        saveButton.hidden = false;
-      });
-
-      saveButton.addEventListener("click", async () => {
-        const brand = brandCell.querySelector("input").value;
-        const model = modelCell.querySelector("input").value;
-
-        try {
-          await saveRecord(record.id, { brand, model });
-          record.brand = brand;
-          record.model = model;
-          setCellText(brandCell, brand);
-          setCellText(modelCell, model);
-          editButton.hidden = false;
-          saveButton.hidden = true;
-        } catch (error) {
-          alert(error.message || "保存中にエラーが発生しました。");
-        }
-      });
-
-      td.append(editButton, saveButton);
-      return td;
-    }
-
-    function setCellEditable(cell, value) {
-      cell.textContent = "";
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = value;
-      cell.appendChild(input);
-    }
-
-    function setCellText(cell, value) {
-      cell.textContent = value;
-    }
-
-    async function saveRecord(id, fields) {
-      const res = await fetch(`/api/kintone/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        throw new Error("データの保存に失敗しました。");
+    @supports not (backdrop-filter: blur(1px)) {
+      .glass {
+        background: rgba(20, 25, 45, 0.88) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+      }
+      [data-theme="light"] .glass {
+        background: rgba(255, 255, 255, 0.92) !important;
+        border-color: rgba(15, 23, 42, 0.18) !important;
       }
     }
 
-    loadRecords();
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .scene__blob {
+        animation: none !important;
+      }
+    }
+
+    /* ==========================================================================
+       リセット & ベース
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-weight: 300;
+      color: var(--color-text);
+      background: var(--color-bg);
+      overflow-x: hidden;
+      min-height: 100vh;
+      transition: background var(--dur-mid) var(--ease-smooth), color var(--dur-mid) var(--ease-smooth);
+    }
+
+    /* ==========================================================================
+       背景の浮遊ブロブ
+       ========================================================================== */
+    .scene {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .scene__blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.55;
+      animation: blob-drift var(--dur, 18s) ease-in-out infinite alternate;
+    }
+    [data-theme="light"] .scene__blob {
+      opacity: 0.3;
+    }
+    .scene__blob--1 {
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, #5ee7df, #3b82f6);
+      top: -200px;
+      left: -150px;
+      --dur: 22s;
+    }
+    .scene__blob--2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, #b490f5, #ec4899);
+      bottom: -200px;
+      right: -100px;
+      --dur: 17s;
+      animation-delay: -8s;
+    }
+    .scene__blob--3 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #ffd27f, #f7a8c4);
+      top: 40%;
+      left: 50%;
+      --dur: 25s;
+      animation-delay: -13s;
+    }
+    @keyframes blob-drift {
+      0% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(60px, -40px) scale(1.08); }
+      66% { transform: translate(-40px, 60px) scale(0.94); }
+      100% { transform: translate(30px, 30px) scale(1.04); }
+    }
+
+    /* ==========================================================================
+       ガラスユーティリティ
+       ========================================================================== */
+    .glass {
+      -webkit-backdrop-filter: var(--blur-md);
+      backdrop-filter: var(--blur-md);
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--reflection-top);
+      pointer-events: none;
+      border-radius: inherit;
+      z-index: 1;
+    }
+
+    :focus { outline: none; }
+    :focus-visible {
+      outline: 2px solid var(--accent-aqua);
+      outline-offset: 3px;
+      border-radius: var(--radius-xs);
+    }
+
+    /* ==========================================================================
+       ボタン
+       ========================================================================== */
+    .glass-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-lg);
+      border-radius: var(--radius-full);
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--color-text);
+      transition: transform var(--dur-fast) var(--ease-liquid), box-shadow var(--dur-fast), background var(--dur-fast);
+    }
+    .glass-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: var(--reflection-top);
+      pointer-events: none;
+    }
+    .glass-btn:active { transform: scale(0.96); }
+
+    .glass-btn--primary {
+      background: linear-gradient(135deg, rgba(94, 231, 223, 0.5) 0%, rgba(59, 130, 246, 0.5) 100%);
+      border: 1px solid rgba(94, 231, 223, 0.45);
+      box-shadow: 0 4px 24px rgba(94, 231, 223, 0.3), var(--reflection-inner);
+    }
+    .glass-btn--primary:hover {
+      background: linear-gradient(135deg, rgba(94, 231, 223, 0.7) 0%, rgba(59, 130, 246, 0.7) 100%);
+      box-shadow: 0 8px 36px rgba(94, 231, 223, 0.5), var(--reflection-inner);
+      transform: translateY(-2px);
+    }
+    [data-theme="light"] .glass-btn--primary {
+      background: linear-gradient(135deg, rgba(8, 145, 178, 0.55) 0%, rgba(37, 99, 235, 0.55) 100%);
+      border-color: rgba(8, 145, 178, 0.5);
+      color: #fff;
+    }
+    [data-theme="light"] .glass-btn--primary:hover {
+      background: linear-gradient(135deg, rgba(8, 145, 178, 0.75) 0%, rgba(37, 99, 235, 0.75) 100%);
+    }
+
+    .glass-btn--ghost {
+      background: var(--glass-white);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+    }
+    .glass-btn--ghost:hover {
+      background: var(--glass-white-md);
+      transform: translateY(-2px);
+    }
+    [data-theme="light"] .glass-btn--ghost {
+      background: rgba(255, 255, 255, 0.65);
+      border-color: rgba(15, 23, 42, 0.18);
+    }
+    [data-theme="light"] .glass-btn--ghost:hover {
+      background: rgba(255, 255, 255, 0.84);
+      border-color: rgba(15, 23, 42, 0.25);
+    }
+
+    .glass-btn--sm {
+      padding: var(--space-2xs) var(--space-md);
+      font-size: var(--text-xs);
+    }
+
+    /* ==========================================================================
+       入力欄
+       ========================================================================== */
+    .glass-input {
+      width: 100%;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--glass-border-subtle);
+      background: var(--glass-white);
+      -webkit-backdrop-filter: var(--blur-sm);
+      backdrop-filter: var(--blur-sm);
+      color: var(--color-text);
+      font-family: var(--font-body);
+      font-size: var(--text-md);
+      outline: none;
+      transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
+    }
+    .glass-input:focus {
+      border-color: rgba(94, 231, 223, 0.6);
+      background: var(--glass-white-md);
+      box-shadow: 0 0 0 3px rgba(94, 231, 223, 0.15), var(--shadow-glass);
+    }
+    [data-theme="light"] .glass-input {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: rgba(15, 23, 42, 0.14);
+      color: #0f172a;
+    }
+    [data-theme="light"] .glass-input:focus {
+      border-color: rgba(8, 145, 178, 0.45);
+      box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+    }
+
+    /* ==========================================================================
+       データテーブル
+       ========================================================================== */
+    .glass-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius-xl);
+    }
+    .glass-table-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--glass-border-subtle);
+    }
+    .glass-table-toolbar__title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      flex: 1;
+    }
+    .glass-table-toolbar__count {
+      font-size: var(--text-xs);
+      opacity: 0.45;
+      white-space: nowrap;
+    }
+    .glass-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: var(--text-sm);
+    }
+    .glass-table thead th {
+      padding: var(--space-sm) var(--space-md);
+      text-align: left;
+      font-size: var(--text-2xs);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      border-bottom: 1px solid var(--glass-border-subtle);
+      white-space: nowrap;
+    }
+    .glass-table tbody tr {
+      transition: background var(--dur-fast);
+    }
+    .glass-table tbody tr:hover {
+      background: var(--glass-white);
+    }
+    .glass-table tbody td {
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid var(--glass-border-subtle);
+      vertical-align: middle;
+    }
+    .glass-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    @media (max-width: 640px) {
+      .glass-table thead { display: none; }
+      .glass-table tbody tr {
+        display: block;
+        border: 1px solid var(--glass-border-subtle);
+        border-radius: var(--radius-md);
+        margin: var(--space-sm);
+      }
+      .glass-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-sm);
+        border-bottom: none;
+        border-top: 1px solid var(--glass-border-subtle);
+        padding: 10px var(--space-md);
+      }
+      .glass-table tbody td:first-child { border-top: none; }
+      .glass-table tbody td::before {
+        content: attr(data-label);
+        font-size: var(--text-2xs);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        opacity: 0.45;
+      }
+    }
+
+    /* ==========================================================================
+       トースト通知
+       ========================================================================== */
+    .glass-toast-region {
+      position: fixed;
+      bottom: var(--space-lg);
+      right: var(--space-lg);
+      z-index: var(--z-toast);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      pointer-events: none;
+      width: min(360px, 90vw);
+    }
+    .glass-toast {
+      border-radius: var(--radius-lg);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      pointer-events: all;
+      cursor: pointer;
+      animation: toast-in var(--dur-mid) var(--ease-liquid) both;
+      transition: transform var(--dur-fast) var(--ease-liquid), opacity var(--dur-fast);
+    }
+    .glass-toast:hover { transform: translateX(-4px); }
+    .glass-toast.is-exiting {
+      animation: toast-out var(--dur-mid) var(--ease-glass) forwards;
+    }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(60px) scale(0.95); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes toast-out {
+      from { opacity: 1; transform: translateX(0) scale(1); max-height: 80px; }
+      to { opacity: 0; transform: translateX(60px) scale(0.9); max-height: 0; padding: 0; margin: 0; }
+    }
+    .glass-toast__icon { font-size: 1.2rem; flex-shrink: 0; }
+    .glass-toast__body { flex: 1; }
+    .glass-toast__title { font-size: var(--text-sm); font-weight: 500; }
+    .glass-toast__desc { font-size: var(--text-xs); opacity: 0.65; margin-top: 2px; }
+    .glass-toast__close { opacity: 0.5; font-size: 0.75rem; flex-shrink: 0; transition: opacity var(--dur-fast); }
+    .glass-toast:hover .glass-toast__close { opacity: 1; }
+    .glass-toast--success { border-color: rgba(74, 222, 128, 0.4) !important; box-shadow: 0 4px 24px rgba(74, 222, 128, 0.2) !important; }
+    .glass-toast--error { border-color: rgba(239, 68, 68, 0.4) !important; box-shadow: 0 4px 24px rgba(239, 68, 68, 0.2) !important; }
+    [data-theme="light"] .glass-toast--success { border-color: rgba(21, 128, 61, 0.35) !important; box-shadow: 0 4px 24px rgba(21, 128, 61, 0.14) !important; }
+    [data-theme="light"] .glass-toast--error { border-color: rgba(185, 28, 28, 0.35) !important; box-shadow: 0 4px 24px rgba(185, 28, 28, 0.14) !important; }
+
+    /* ==========================================================================
+       テーマ切替ボタン
+       ========================================================================== */
+    .theme-toggle-btn {
+      position: fixed;
+      top: var(--space-md);
+      right: var(--space-md);
+      z-index: var(--z-toast);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--dur-fast) var(--ease-liquid);
+    }
+    .theme-toggle-btn:hover { transform: scale(1.1) rotate(15deg); }
+    .theme-toggle-btn .icon-dark { display: block; }
+    .theme-toggle-btn .icon-light { display: none; }
+    [data-theme="light"] .theme-toggle-btn .icon-dark { display: none; }
+    [data-theme="light"] .theme-toggle-btn .icon-light { display: block; }
+
+    /* ==========================================================================
+       ページレイアウト
+       ========================================================================== */
+    .page { position: relative; z-index: 10; }
+    .container { width: min(1100px, 92vw); margin-inline: auto; }
+    .section {
+      padding: var(--space-3xl) 0;
+      animation: cascade-in var(--dur-slow) var(--ease-glass) both;
+    }
+    @keyframes cascade-in {
+      0% { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(8px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+
+    .app-header {
+      padding: var(--space-3xl) 0 var(--space-lg);
+      text-align: center;
+    }
+    .app-header__kicker {
+      display: block;
+      font-size: var(--text-xs);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.55;
+      margin-bottom: var(--space-xs);
+    }
+    .app-header__title {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      letter-spacing: -0.01em;
+      background: linear-gradient(135deg, #fff 30%, var(--accent-aqua) 65%, var(--accent-violet) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    [data-theme="light"] .app-header__title {
+      background: linear-gradient(135deg, #0f172a 20%, #0369a1 60%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+</head>
+<body>
+  <div class="scene" aria-hidden="true">
+    <div class="scene__blob scene__blob--1"></div>
+    <div class="scene__blob scene__blob--2"></div>
+    <div class="scene__blob scene__blob--3"></div>
+  </div>
+
+  <button class="glass glass-btn theme-toggle-btn" id="theme-toggle" aria-label="配色切替" title="ライト/ダークモード切替">
+    <span class="icon-dark" aria-hidden="true">☀️</span>
+    <span class="icon-light" aria-hidden="true">🌙</span>
+  </button>
+
+  <div class="glass-toast-region" id="toast-region" role="region" aria-label="通知" aria-live="polite"></div>
+
+  <main class="page">
+    <div class="container">
+      <header class="app-header">
+        <span class="app-header__kicker">kintone</span>
+        <h1 class="app-header__title">レコード一覧</h1>
+      </header>
+
+      <section class="section">
+        <div class="glass glass-table-wrap" id="records-table-wrap">
+          <div class="glass-table-toolbar">
+            <span class="glass-table-toolbar__title">レコード一覧</span>
+            <span class="glass-table-toolbar__count" id="records-count"></span>
+          </div>
+          <table class="glass-table" id="records-table" aria-label="kintoneレコード一覧">
+            <thead>
+              <tr>
+                <th scope="col">レコード番号</th>
+                <th scope="col">メーカー</th>
+                <th scope="col">車種</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* レコードの状態を保持し、render() が常に状態から画面を再構築する */
+      let records = [];
+
+      const GlassTheme = {
+        init() {
+          const btn = document.getElementById("theme-toggle");
+          const root = document.documentElement;
+          const key = "glass-theme";
+          const saved = localStorage.getItem(key);
+          if (saved) root.setAttribute("data-theme", saved);
+
+          btn.addEventListener("click", () => {
+            const next = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+            root.setAttribute("data-theme", next);
+            localStorage.setItem(key, next);
+          });
+        },
+      };
+
+      const GlassToast = {
+        ICONS: { success: "✓", error: "✕" },
+
+        show(type, title, desc, duration) {
+          const region = document.getElementById("toast-region");
+          const toast = document.createElement("div");
+          toast.className = `glass glass-toast glass-toast--${type}`;
+          toast.setAttribute("role", "status");
+          toast.innerHTML = `
+            <span class="glass-toast__icon" aria-hidden="true">${this.ICONS[type] || ""}</span>
+            <div class="glass-toast__body">
+              <div class="glass-toast__title">${escapeHtml(title)}</div>
+              ${desc ? `<div class="glass-toast__desc">${escapeHtml(desc)}</div>` : ""}
+            </div>
+            <span class="glass-toast__close" aria-label="閉じる">✕</span>
+          `;
+
+          region.appendChild(toast);
+
+          const dismiss = () => {
+            toast.classList.add("is-exiting");
+            toast.addEventListener("animationend", () => toast.remove(), { once: true });
+          };
+
+          toast.querySelector(".glass-toast__close").addEventListener("click", dismiss);
+          toast.addEventListener("click", dismiss);
+          if (duration !== 0) setTimeout(dismiss, duration || 4000);
+        },
+      };
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[char]));
+      }
+
+      function render() {
+        const tbody = document.querySelector("#records-table tbody");
+        tbody.innerHTML = records.map(renderRow).join("");
+        document.getElementById("records-count").textContent = `${records.length} 件`;
+      }
+
+      function renderRow(record) {
+        return record.editing ? renderEditableRow(record) : renderReadOnlyRow(record);
+      }
+
+      function renderReadOnlyRow(record) {
+        return `
+          <tr>
+            <td data-label="レコード番号">${escapeHtml(record.id)}</td>
+            <td data-label="メーカー">${escapeHtml(record.brand)}</td>
+            <td data-label="車種">${escapeHtml(record.model)}</td>
+            <td data-label="操作">
+              <button type="button" class="glass glass-btn glass-btn--ghost glass-btn--sm" data-action="edit" data-id="${escapeHtml(record.id)}">編集</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      function renderEditableRow(record) {
+        return `
+          <tr>
+            <td data-label="レコード番号">${escapeHtml(record.id)}</td>
+            <td data-label="メーカー"><input class="glass-input" type="text" data-field="brand" value="${escapeHtml(record.brand)}"></td>
+            <td data-label="車種"><input class="glass-input" type="text" data-field="model" value="${escapeHtml(record.model)}"></td>
+            <td data-label="操作">
+              <button type="button" class="glass glass-btn glass-btn--primary glass-btn--sm" data-action="save" data-id="${escapeHtml(record.id)}">保存</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      async function handleTableClick(event) {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const record = records.find((r) => String(r.id) === button.dataset.id);
+        if (!record) return;
+
+        if (button.dataset.action === "edit") {
+          record.editing = true;
+          render();
+          return;
+        }
+
+        if (button.dataset.action === "save") {
+          const row = button.closest("tr");
+          const brand = row.querySelector('[data-field="brand"]').value;
+          const model = row.querySelector('[data-field="model"]').value;
+
+          try {
+            await saveRecord(record.id, { brand, model });
+            record.brand = brand;
+            record.model = model;
+            record.editing = false;
+            render();
+            GlassToast.show("success", "保存しました", null, 2500);
+          } catch (error) {
+            GlassToast.show("error", "保存に失敗しました", error.message);
+          }
+        }
+      }
+
+      async function saveRecord(id, fields) {
+        const res = await fetch(`/api/kintone/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fields),
+        });
+        if (!res.ok) {
+          throw new Error("データの保存に失敗しました。");
+        }
+      }
+
+      async function loadRecords() {
+        const res = await fetch("/api/kintone");
+        const data = await res.json();
+
+        records = data.records.map((r) => ({
+          id: r.$id.value,
+          brand: r.brand?.value ?? "",
+          model: r.model?.value ?? "",
+          editing: false,
+        }));
+        render();
+      }
+
+      document.querySelector("#records-table tbody").addEventListener("click", handleTableClick);
+
+      GlassTheme.init();
+      loadRecords();
+    })();
   </script>
 </body>
 </html>
