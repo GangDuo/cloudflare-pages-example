@@ -614,6 +614,9 @@
       };
 
       function escapeHtml(value) {
+        if (value === null || value === undefined) {
+          return "";
+        }
         return String(value).replace(/[&<>"']/g, (char) => ({
           "&": "&amp;",
           "<": "&lt;",
@@ -702,16 +705,23 @@
       }
 
       async function loadRecords() {
-        const res = await fetch("/api/kintone");
-        const data = await res.json();
+        try {
+          const res = await fetch("/api/kintone");
+          if (!res.ok) {
+            throw new Error("レコードの取得に失敗しました。");
+          }
+          const data = await res.json();
 
-        records = data.records.map((r) => ({
-          id: r.$id.value,
-          brand: r.brand?.value ?? "",
-          model: r.model?.value ?? "",
-          editing: false,
-        }));
-        render();
+          records = (data.records || []).map((r) => ({
+            id: r.$id?.value ?? "",
+            brand: r.brand?.value ?? "",
+            model: r.model?.value ?? "",
+            editing: false,
+          }));
+          render();
+        } catch (error) {
+          GlassToast.show("error", "読み込み失敗", error.message);
+        }
       }
 
       document.querySelector("#records-table tbody").addEventListener("click", handleTableClick);
