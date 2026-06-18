@@ -21,7 +21,13 @@ export async function onRequestPut(context) {
     }),
   });
 
-  const data = await res.json();
+  let data;
+  const contentType = res.headers.get("Content-Type");
+  if (contentType && contentType.includes("application/json")) {
+    data = await res.json();
+  } else {
+    data = { message: await res.text() };
+  }
 
   return new Response(JSON.stringify(data), {
     status: res.status,
